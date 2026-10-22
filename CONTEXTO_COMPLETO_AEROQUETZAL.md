@@ -17,6 +17,8 @@ La infraestructura de red está terminada para el alcance actual, pero la capa w
 
 Las evidencias de infraestructura y servicios de la Fase 3 ya existen en los informes y carpetas del proyecto. El equipo web no debe producir capturas ni nuevas evidencias visuales como parte de su asignación; debe entregar código funcional y tests del código.
 
+La lógica del negocio será una simulación completamente web: vuelos directos, cupos, reservas gratuitas, cancelación antes del Check-In, asignación automática de asiento y estados operativos básicos. No se implementarán pagos, precios, facturas, correos, notificaciones, carga de documentos ni integraciones externas. Nery ocupa el último turno secuencial y es responsable de integrar y desplegar la versión completa en Hetzner.
+
 - la intranet `10.10.0.116` sirve temporalmente el frontend React estático que será migrado a la web pública;
 - el contenido desplegado todavía se identifica como “Aerolínea Redes · Laboratorio 5”;
 - `/login/` es una interfaz visual, pero Nginx no ejecuta la autenticación LDAP que el proyecto original esperaba de Apache;
@@ -239,6 +241,7 @@ Reglas relevantes de `core-app`:
 6. Recibir la llave pública SSH de Hugo y crear su cuenta nominal.
 7. Sustituir el texto heredado “Laboratorio 5” por identidad AeroQuetzal.
 8. Agregar pruebas automáticas, health checks, backups de datos y procedimiento de despliegue.
+9. Ejecutar con Nery el despliegue final integrado; no desplegar versiones parciales durante los turnos anteriores. Nery debe retirar la web temporal que ya existe en Hetzner y sustituirla por la solución final, eliminando únicamente sus archivos, contenedor e imagen obsoleta sin alterar la VPN, redes, datos ni los demás servicios.
 
 ## 12. Reglas para continuar sin dañar la infraestructura
 

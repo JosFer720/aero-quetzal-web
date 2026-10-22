@@ -12,6 +12,41 @@ Construir dos aplicaciones distintas que compartan una lógica de negocio segura
 
 La web pública nunca debe conectarse directamente a LDAP, PostgreSQL ni a los contenedores internos. La web interna no debe publicarse en Internet.
 
+### 1.1 Decisiones funcionales cerradas
+
+Este proyecto simula la operación web de AeroQuetzal. No maneja dinero ni se integra con servicios externos.
+
+- Todos los vuelos se reservan gratuitamente.
+- No existen pagos, tarjetas, facturación, moneda, impuestos ni pasarela de pago.
+- Una reserva válida queda confirmada inmediatamente.
+- No se envían correos, SMS, notificaciones push ni confirmaciones externas.
+- La confirmación se muestra únicamente en la web con un código de reserva.
+- No se cargan documentos, fotografías ni archivos de pasajeros.
+- Sólo se manejan vuelos directos de un trayecto; no hay escalas ni itinerarios de múltiples segmentos.
+- El pasajero elige origen, destino, fecha y vuelo disponible.
+- El sistema controla cupos para impedir sobreventa.
+- El asiento se asigna automáticamente durante el Check-In; no habrá mapa gráfico de asientos.
+- Una reserva confirmada puede cancelarse antes del Check-In y la cancelación devuelve el cupo.
+- Una reserva con Check-In completado ya no puede cancelarse.
+- No hay recuperación por correo. La consulta usa código de reserva y número de documento.
+- No se implementan aplicaciones móviles, integraciones con aeropuertos, mapas, clima ni sistemas de terceros.
+
+Estados de reserva permitidos:
+
+```text
+CONFIRMED → CHECKED_IN
+CONFIRMED → CANCELLED
+```
+
+Estados de vuelo permitidos:
+
+```text
+SCHEDULED → BOARDING → DEPARTED → ARRIVED
+SCHEDULED → CANCELLED
+```
+
+El objetivo es que los dos sitios y su backend funcionen correctamente dentro de este alcance. No debe agregarse funcionalidad fuera de la web.
+
 ## 2. Estado inicial
 
 Existe una compilación React estática en `10.10.0.116`, servida por Nginx. Contiene portada, `/login/` y `/privado/`, pero no implementa autenticación real ni lógica del negocio. El código fuente original se encuentra en `Desktop/lab05redes/web/site`.
@@ -122,7 +157,7 @@ Entregables de código:
 - buscador por origen, destino y fecha;
 - listado de vuelos y disponibilidad;
 - formulario de datos del pasajero;
-- flujo de reserva simulada y pantalla de confirmación;
+- flujo de reserva gratuita y pantalla de confirmación con código;
 - consulta de reserva por código;
 - manejo de carga, errores, vacío y reintento;
 - cliente HTTP tipado basado en `api-contracts`;
@@ -165,15 +200,25 @@ Entregables de código:
 - Check-In idempotente;
 - middleware de autorización que consuma la sesión emitida por Auth;
 - manejo uniforme de errores;
-- pruebas unitarias y de integración para cada caso de uso.
+- pruebas unitarias y de integración para cada caso de uso;
+- integración final de los cinco módulos sobre `main`;
+- scripts reproducibles de build y despliegue;
+- identificación y retiro controlado de la web anterior de “Aerolínea Redes” que ya está instalada en Hetzner;
+- despliegue final de la web pública, intranet, API, Auth y PostgreSQL en los servidores asignados;
+- ejecución de todos los tests y health checks después del despliegue.
 
 Reglas mínimas:
 
 - no reservar más asientos que la capacidad disponible;
 - una reserva confirmada reduce disponibilidad dentro de una transacción;
+- toda reserva válida se confirma inmediatamente y tiene costo cero;
+- cancelar una reserva confirmada devuelve los asientos dentro de una transacción;
 - repetir el mismo Check-In no crea duplicados;
+- el Check-In asigna automáticamente el primer asiento disponible;
 - las operaciones internas registran actor, fecha y acción;
 - endpoints públicos nunca exponen datos privados de pasajeros.
+
+Nery es la última persona del flujo secuencial. No debe desplegar parcialmente el trabajo de cada integrante. En su despliegue debe reemplazar la web anterior, no instalar la nueva encima de sus archivos ni dejar ambas versiones sirviendo tráfico. Su turno termina cuando integra la versión completa, todos los tests pasan y la versión final queda ejecutándose en Hetzner.
 
 ### 6.4 Milton — modelo de dominio y persistencia
 
@@ -202,6 +247,8 @@ Entidades mínimas:
 - `SeatAssignment`;
 - `CheckIn`;
 - `AuditEvent`.
+
+No debe crearse ninguna entidad `Payment`, `Invoice`, `Transaction`, `Notification` o equivalente.
 
 Los contratos de API deben exportarse como paquete compartido para que ambos frontends y el backend utilicen los mismos tipos.
 
@@ -262,9 +309,9 @@ Debe conservar el carácter visual abierto y promocional de la página actual. S
 
 1. encabezado y propuesta de valor de AeroQuetzal;
 2. buscador de vuelos como acción principal;
-3. destinos y promociones;
+3. destinos disponibles;
 4. resultados de disponibilidad;
-5. reserva paso a paso;
+5. reserva gratuita paso a paso;
 6. consulta de reserva/estado;
 7. información y contacto.
 
@@ -290,10 +337,10 @@ Prefijo: `/api/v1/public`.
 |---|---|---|
 | `GET` | `/airports` | Catálogo de aeropuertos activos |
 | `GET` | `/flights?origin=&destination=&date=` | Búsqueda de vuelos |
-| `GET` | `/flights/:id/availability` | Cupos y tarifa simulada |
+| `GET` | `/flights/:id/availability` | Cupos disponibles |
 | `POST` | `/reservations` | Crear reserva |
 | `GET` | `/reservations/:code` | Consultar resumen con dato de verificación |
-| `POST` | `/reservations/:code/cancel` | Cancelación simulada según reglas |
+| `POST` | `/reservations/:code/cancel` | Cancelar antes del Check-In y devolver cupo |
 | `GET` | `/status/:flightNumber` | Estado público del vuelo |
 
 Ejemplo de creación de reserva:
@@ -313,6 +360,18 @@ Ejemplo de creación de reserva:
 ```
 
 La respuesta no debe incluir identificadores internos innecesarios ni datos de otros pasajeros.
+
+Respuesta mínima de una reserva creada:
+
+```json
+{
+  "code": "AQ7F3K9",
+  "status": "CONFIRMED",
+  "message": "Reserva gratuita confirmada"
+}
+```
+
+No debe existir un endpoint de pagos.
 
 ## 10. Contrato de API interno
 
@@ -425,6 +484,10 @@ Reglas obligatorias:
 
 Después comienza una segunda ronda en el mismo orden para integración, correcciones y pruebas extremo a extremo. El orden puede cambiar, pero debe existir un único responsable activo en cada momento.
 
+El último turno de Nery incluye obligatoriamente el despliegue completo. Después de su `push` final debe actualizar los servidores desde `main`, construir los contenedores, aplicar migraciones, levantar los servicios y verificar health checks. Ningún otro integrante despliega versiones parciales durante su turno.
+
+La web que actualmente existe en Hetzner es una versión temporal y debe ser sustituida por Nery. El retiro se limita a sus archivos, contenedor e imagen obsoleta cuando corresponda. No se deben borrar ni recrear la VPN, las redes Docker, los volúmenes de PostgreSQL, LDAP, reglas de firewall, certificados válidos ni otros servicios de infraestructura.
+
 ## 14. Integración por etapas
 
 ### Etapa 1 — base común
@@ -455,11 +518,21 @@ Después comienza una segunda ronda en el mismo orden para integración, correcc
 
 ### Etapa 4 — despliegue y validación del código
 
-- desplegar primero en entorno de prueba;
-- ejecutar pruebas automáticas;
-- validar permitidos y bloqueos de red;
-- publicar la web pública sólo después de aprobar HTTPS;
-- reiniciar servicios y comprobar persistencia.
+Esta etapa pertenece al turno final de Nery:
+
+- actualizar `main` con `git pull --ff-only`;
+- ejecutar lint, typecheck y todos los tests;
+- construir las imágenes de producción;
+- identificar el contenedor, imagen, volumen de archivos estáticos y configuración Nginx de la web anterior;
+- detener la web anterior y retirar solamente sus archivos y recursos obsoletos, sin afectar la red ni otros contenedores;
+- desplegar PostgreSQL, Auth y `business-api` en `core-app`;
+- desplegar la nueva intranet en `10.10.0.116`;
+- desplegar la web pública y su gateway en `edge-vpn`;
+- aplicar migraciones y cargar la semilla acordada;
+- publicar la web pública únicamente después de configurar HTTPS;
+- ejecutar health checks y pruebas E2E contra la versión desplegada;
+- comprobar que ninguna ruta o contenedor siga mostrando la web anterior de “Aerolínea Redes”;
+- reiniciar de forma controlada y comprobar persistencia.
 
 ## 15. Criterios de aceptación
 
@@ -470,9 +543,11 @@ Después comienza una segunda ronda en el mismo orden para integración, correcc
 - carga desde Internet por HTTPS;
 - busca vuelos con datos reales de la base;
 - muestra disponibilidad;
-- crea una reserva válida;
+- crea una reserva gratuita y confirmada inmediatamente;
 - impide sobreventa;
 - permite consultar la reserva;
+- permite cancelarla antes del Check-In y restaura el cupo;
+- no muestra pagos, precios, facturas ni confirmaciones externas;
 - no expone endpoints internos;
 - no puede contactar LDAP ni PostgreSQL directamente.
 
@@ -502,7 +577,7 @@ Después comienza una segunda ronda en el mismo orden para integración, correcc
 Esta validación se ejecuta para confirmar que el desarrollo funciona. No requiere tomar fotografías, capturas de pantalla ni crear una carpeta de evidencias.
 
 1. Abrir la web pública desde Internet y buscar un vuelo.
-2. Crear una reserva y guardar su código.
+2. Crear gratuitamente una reserva y guardar su código mostrado en pantalla.
 3. Activar WireGuard y abrir la intranet.
 4. Iniciar sesión con un usuario LDAP de Check-In.
 5. Buscar el código creado y completar Check-In.
@@ -510,6 +585,8 @@ Esta validación se ejecuta para confirmar que el desarrollo funciona. No requie
 7. Intentar una acción administrativa con rol insuficiente y observar `403`.
 8. Desde Visitantes, demostrar Internet permitido e intranet bloqueada.
 9. Mostrar que PostgreSQL y LDAP no están publicados.
+
+No se requiere demostrar pagos, correos, notificaciones ni integraciones externas porque están fuera del alcance decidido.
 
 ## 17. Acciones antes de programar
 
@@ -520,4 +597,5 @@ Esta validación se ejecuta para confirmar que el desarrollo funciona. No requie
 - Milton publica la primera versión de contratos y esquema.
 - Se acuerda la nomenclatura de roles LDAP.
 - Fernando revisa cualquier cambio de firewall, rutas o despliegue antes de aplicarlo a Hetzner.
+- Nery prepara y ejecuta el único despliegue final cuando los cuatro turnos anteriores hayan terminado.
 
