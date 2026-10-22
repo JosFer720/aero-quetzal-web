@@ -1,0 +1,1 @@
+{"uid": "<!--#echo var="AUTHENTICATE_UID" -->", "cn": "<!--#echo var="AUTHENTICATE_CN" -->", "mail": "<!--#echo var="AUTHENTICATE_MAIL" -->"}
