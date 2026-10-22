@@ -15,6 +15,8 @@ La infraestructura de las fases 2 y 3 está operativa. Hay dos máquinas virtual
 
 La infraestructura de red está terminada para el alcance actual, pero la capa web de negocio todavía no está completa. El equipo tomó la siguiente decisión de producto: el diseño actual de “Aerolínea Redes” se conservará, se moverá y se convertirá en la web pública de AeroQuetzal; la intranet será una aplicación nueva con el mismo lenguaje visual, pero con funciones internas diferentes.
 
+Las evidencias de infraestructura y servicios de la Fase 3 ya existen en los informes y carpetas del proyecto. El equipo web no debe producir capturas ni nuevas evidencias visuales como parte de su asignación; debe entregar código funcional y tests del código.
+
 - la intranet `10.10.0.116` sirve temporalmente el frontend React estático que será migrado a la web pública;
 - el contenido desplegado todavía se identifica como “Aerolínea Redes · Laboratorio 5”;
 - `/login/` es una interfaz visual, pero Nginx no ejecuta la autenticación LDAP que el proyecto original esperaba de Apache;

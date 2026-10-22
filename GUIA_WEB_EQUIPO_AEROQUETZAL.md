@@ -1,7 +1,7 @@
 # Guía de implementación web para el equipo AeroQuetzal
 
 **Responsables:** Ian, Javier, Nery, Milton y Hugo  
-**Condición obligatoria:** los cinco integrantes deben desarrollar código de producción y pruebas automatizadas. Documentar, diseñar diapositivas o tomar capturas no sustituye la contribución de código.
+**Condición obligatoria:** los cinco integrantes deben desarrollar código de producción y tests automatizados del código. No se les solicita tomar capturas, preparar evidencias visuales, redactar informes ni diseñar diapositivas; la evidencia de Fase 3 ya existe. Su entrega es software funcional, integrado y correctamente probado.
 
 ## 1. Objetivo
 
@@ -241,9 +241,9 @@ Además de su módulo principal, cada integrante debe:
 - incluir pruebas automatizadas de su código;
 - dejar `main` ejecutable y con las pruebas aprobadas antes de ceder el turno;
 - corregir conflictos de tipos o contratos que provoque su módulo;
-- participar en una prueba integrada.
+- integrar su módulo con los demás y agregar o actualizar los tests correspondientes.
 
-Una contribución no cuenta como código si contiene únicamente Markdown, capturas, configuración visual o cambios generados sin entenderlos. Debe existir lógica ejecutable y pruebas relacionadas.
+Una contribución debe contener lógica ejecutable y tests relacionados. No se evaluará a estos cinco integrantes por cantidad de documentación, fotografías o capturas de la web.
 
 ## 8. Sistema visual compartido
 
@@ -453,7 +453,7 @@ Después comienza una segunda ronda en el mismo orden para integración, correcc
 - rate limit y límites de tamaño;
 - backups y restauración probada.
 
-### Etapa 4 — despliegue y demostración
+### Etapa 4 — despliegue y validación del código
 
 - desplegar primero en entorno de prueba;
 - ejecutar pruebas automáticas;
@@ -497,7 +497,9 @@ Después comienza una segunda ronda en el mismo orden para integración, correcc
 - los contenedores sobreviven un reinicio;
 - existe rollback documentado.
 
-## 16. Demostración final sugerida
+## 16. Validación funcional final
+
+Esta validación se ejecuta para confirmar que el desarrollo funciona. No requiere tomar fotografías, capturas de pantalla ni crear una carpeta de evidencias.
 
 1. Abrir la web pública desde Internet y buscar un vuelo.
 2. Crear una reserva y guardar su código.
