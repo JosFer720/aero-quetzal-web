@@ -1,0 +1,38 @@
+{
+  "name": "@aeroquetzal/database",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "npm run prisma:generate && tsc -p tsconfig.json",
+    "lint": "oxlint src prisma test",
+    "typecheck": "npm run prisma:generate && tsc -p tsconfig.json --noEmit",
+    "test": "npm run prisma:generate && vitest run",
+    "prisma:generate": "prisma generate",
+    "prisma:validate": "cross-env DATABASE_URL=postgresql://localhost/aeroquetzal prisma validate",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:status": "prisma migrate status",
+    "prisma:seed": "prisma db seed"
+  },
+  "dependencies": {
+    "@aeroquetzal/domain": "0.1.0",
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "@types/pg": "8.23.1",
+    "cross-env": "10.1.0",
+    "prisma": "7.10.1",
+    "tsx": "4.23.15"
+  }
+}

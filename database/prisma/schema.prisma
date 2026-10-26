@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  CHECKED_IN
+  CANCELLED
+}
+
+enum FlightStatus {
+  SCHEDULED
+  BOARDING
+  DEPARTED
+  ARRIVED
+  CANCELLED
+}
+
+model Airport {
+  id                 String   @id @default(cuid())
+  code               String   @unique @db.Char(3)
+  name               String   @db.VarChar(120)
+  city               String   @db.VarChar(80)
+  country            String   @db.VarChar(80)
+  timezone           String   @db.VarChar(64)
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  departingFlights   Flight[] @relation("FlightOrigin")
+  destinationFlights Flight[] @relation("FlightDestination")
+
+  @@index([active, code])
+  @@map("airports")
+}
+
+model Aircraft {
+  id              String           @id @default(cuid())
+  registration    String           @unique @db.VarChar(16)
+  model           String           @db.VarChar(80)
+  capacity        Int
+  active          Boolean          @default(true)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  flightInstances FlightInstance[]
+
+  @@index([active])
+  @@map("aircraft")
+}
+
+model Flight {
+  id              String           @id @default(cuid())
+  flightNumber    String           @unique @map("flight_number") @db.VarChar(8)
+  originId        String           @map("origin_id")
+  destinationId   String           @map("destination_id")
+  durationMinutes Int              @map("duration_minutes")
+  active          Boolean          @default(true)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  origin          Airport          @relation("FlightOrigin", fields: [originId], references: [id], onDelete: Restrict)
+  destination     Airport          @relation("FlightDestination", fields: [destinationId], references: [id], onDelete: Restrict)
+  instances       FlightInstance[]
+
+  @@index([originId, destinationId, active])
+  @@map("flights")
+}
+
+model FlightInstance {
+  id              String           @id @default(cuid())
+  flightId        String           @map("flight_id")
+  aircraftId      String           @map("aircraft_id")
+  departureAt     DateTime         @map("departure_at") @db.Timestamptz(3)
+  arrivalAt       DateTime         @map("arrival_at") @db.Timestamptz(3)
+  status          FlightStatus     @default(SCHEDULED)
+  capacity        Int
+  reservedSeats   Int              @default(0) @map("reserved_seats")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  flight          Flight           @relation(fields: [flightId], references: [id], onDelete: Restrict)
+  aircraft        Aircraft         @relation(fields: [aircraftId], references: [id], onDelete: Restrict)
+  reservations    Reservation[]
+  seatAssignments SeatAssignment[]
+
+  @@unique([flightId, departureAt])
+  @@index([departureAt, status])
+  @@index([aircraftId, departureAt])
+  @@map("flight_instances")
+}
+
+model Passenger {
+  id                   String                 @id @default(cuid())
+  firstName            String                 @map("first_name") @db.VarChar(80)
+  lastName             String                 @map("last_name") @db.VarChar(80)
+  documentNumber       String                 @unique @map("document_number") @db.VarChar(24)
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime               @updatedAt @map("updated_at")
+  reservationPassengers ReservationPassenger[]
+
+  @@index([lastName, firstName])
+  @@map("passengers")
+}
+
+model Reservation {
+  id                String                 @id @default(cuid())
+  code              String                 @unique @db.Char(7)
+  flightInstanceId  String                 @map("flight_instance_id")
+  contactEmail      String                 @map("contact_email") @db.VarChar(254)
+  status            ReservationStatus      @default(CONFIRMED)
+  passengerCount    Int                    @map("passenger_count")
+  cancelledAt       DateTime?              @map("cancelled_at") @db.Timestamptz(3)
+  createdAt         DateTime               @default(now()) @map("created_at")
+  updatedAt         DateTime               @updatedAt @map("updated_at")
+  flightInstance    FlightInstance         @relation(fields: [flightInstanceId], references: [id], onDelete: Restrict)
+  passengers        ReservationPassenger[]
+
+  @@index([flightInstanceId, status])
+  @@index([contactEmail])
+  @@map("reservations")
+}
+
+model ReservationPassenger {
+  id             String          @id @default(cuid())
+  reservationId  String          @map("reservation_id")
+  passengerId    String          @map("passenger_id")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  reservation    Reservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  passenger      Passenger       @relation(fields: [passengerId], references: [id], onDelete: Restrict)
+  seatAssignment SeatAssignment?
+  checkIn        CheckIn?
+
+  @@unique([reservationId, passengerId])
+  @@index([passengerId])
+  @@map("reservation_passengers")
+}
+
+model SeatAssignment {
+  id                       String               @id @default(cuid())
+  reservationPassengerId   String               @unique @map("reservation_passenger_id")
+  flightInstanceId         String               @map("flight_instance_id")
+  seatNumber               String               @map("seat_number") @db.VarChar(4)
+  createdAt                DateTime             @default(now()) @map("created_at")
+  reservationPassenger     ReservationPassenger @relation(fields: [reservationPassengerId], references: [id], onDelete: Cascade)
+  flightInstance           FlightInstance       @relation(fields: [flightInstanceId], references: [id], onDelete: Cascade)
+
+  @@unique([flightInstanceId, seatNumber])
+  @@map("seat_assignments")
+}
+
+model CheckIn {
+  id                     String               @id @default(cuid())
+  reservationPassengerId String               @unique @map("reservation_passenger_id")
+  performedBy            String               @map("performed_by") @db.VarChar(80)
+  checkedInAt            DateTime             @default(now()) @map("checked_in_at") @db.Timestamptz(3)
+  reservationPassenger   ReservationPassenger @relation(fields: [reservationPassengerId], references: [id], onDelete: Cascade)
+
+  @@index([performedBy, checkedInAt])
+  @@map("check_ins")
+}
+
+model AuditEvent {
+  id         String   @id @default(cuid())
+  actor      String   @db.VarChar(80)
+  action     String   @db.VarChar(80)
+  entityType String   @map("entity_type") @db.VarChar(80)
+  entityId   String   @map("entity_id") @db.VarChar(64)
+  details    Json?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([entityType, entityId])
+  @@index([actor, createdAt])
+  @@index([createdAt])
+  @@map("audit_events")
+}
