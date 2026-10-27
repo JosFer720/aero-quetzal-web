@@ -1,0 +1,33 @@
+{
+  "name": "@aeroquetzal/auth-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node --env-file-if-exists=../../.env dist/main.js",
+    "lint": "oxlint src test",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aeroquetzal/api-contracts": "0.1.0",
+    "@aeroquetzal/domain": "0.1.0",
+    "@fastify/cookie": "11.1.3",
+    "@fastify/helmet": "13.2.0",
+    "fastify": "5.12.7",
+    "ldapts": "8.2.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3"
+  }
+}

@@ -7,6 +7,7 @@ import {
   flightSearchQuerySchema,
   loginRequestSchema,
   publicRoutes,
+  sessionResponseSchema,
 } from "../src/index.js";
 
 describe("contratos públicos", () => {
@@ -63,6 +64,19 @@ describe("contratos públicos", () => {
 });
 
 describe("contratos internos", () => {
+  it("comparte los campos CSRF y vencimiento para consumidores de Auth", () => {
+    const session = sessionResponseSchema.parse({
+      authenticated: true,
+      user: { username: "hugo", displayName: "Hugo", roles: ["admin"] },
+      csrfToken: "test-csrf-token",
+      expiresAt: "2026-11-05T20:00:00Z",
+    });
+    expect(session.csrfToken).toBe("test-csrf-token");
+    expect(sessionResponseSchema.parse({
+      authenticated: false, user: null, csrfToken: null, expiresAt: null,
+    }).authenticated).toBe(false);
+  });
+
   it("rechaza horarios con llegada anterior a la salida", () => {
     expect(() =>
       createFlightInstanceRequestSchema.parse({

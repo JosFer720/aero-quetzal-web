@@ -26,6 +26,8 @@ export const loginRequestSchema = z.object({
 export const sessionResponseSchema = z.object({
   authenticated: z.boolean(),
   user: sessionUserSchema.nullable(),
+  csrfToken: z.string().min(1).nullable(),
+  expiresAt: isoDateTimeSchema.nullable(),
 });
 
 const flightFields = {
