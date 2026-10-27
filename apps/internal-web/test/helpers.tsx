@@ -12,6 +12,8 @@ import {
 } from "./fixtures";
 import type { SessionResponse } from "@aeroquetzal/api-contracts";
 
+export { deferred } from "./deferred";
+
 export function json(value: unknown, status = 200) {
   return new Response(JSON.stringify(value), {
     status,

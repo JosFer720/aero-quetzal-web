@@ -33,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: "loading" });
   const csrf = useRef<string | null>(null);
   const epoch = useRef(0);
+  const logoutPending = useRef(false);
   const [api] = useState(() =>
     createApi({
       csrfToken: () => csrf.current,
@@ -79,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refresh = useCallback(async () => {
+    if (logoutPending.current) return;
     const current = ++epoch.current;
     try {
       const response = await api.session();
@@ -128,10 +130,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (current === epoch.current) accept(response);
   }
   async function logout() {
+    if (logoutPending.current) return;
+    logoutPending.current = true;
     ++epoch.current;
-    await api.logout();
-    csrf.current = null;
-    setState({ status: "anonymous", expired: false });
+    let completed = false;
+    try {
+      await api.logout();
+      completed = true;
+      csrf.current = null;
+      setState({ status: "anonymous", expired: false });
+    } finally {
+      // Ninguna lectura iniciada antes o durante logout puede restaurar la sesión.
+      ++epoch.current;
+      logoutPending.current = false;
+      // Reanuda la validación/expiración si falló la petición de cierre.
+      if (!completed) void refresh();
+    }
   }
 
   return (

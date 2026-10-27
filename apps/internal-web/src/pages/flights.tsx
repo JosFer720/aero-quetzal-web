@@ -188,7 +188,10 @@ export function FlightsPage() {
     ]);
     return { flights, airports };
   });
-  const [editor, setEditor] = useState<InternalFlight | "new" | null>(null);
+  const [editor, setEditor] = useState<{
+    flight: InternalFlight | null;
+    airports: InternalAirport[];
+  } | null>(null);
   const [filter, setFilter] = useState("");
   const [active, setActive] = useState("all");
   const [notice, setNotice] = useState("");
@@ -229,7 +232,8 @@ export function FlightsPage() {
         </Field>
         <Button
           onClick={() => {
-            setEditor("new");
+            if (result.status !== "success") return;
+            setEditor({ flight: null, airports: result.data.airports });
             setNotice("");
           }}
           disabled={result.status !== "success"}
@@ -240,40 +244,38 @@ export function FlightsPage() {
           Actualizar
         </Button>
       </div>
+      {editor ? (
+        <FlightEditor
+          key={editor.flight?.id ?? "new"}
+          flight={editor.flight}
+          airports={editor.airports}
+          onClose={() => setEditor(null)}
+          onSaved={(message) => {
+            setEditor(null);
+            setNotice(message);
+            reload();
+          }}
+        />
+      ) : null}
       {result.status === "loading" ? (
         <Loading />
       ) : result.status === "error" ? (
         <ErrorState message={result.message} onRetry={reload} />
       ) : (
-        <>
-          {editor ? (
-            <FlightEditor
-              key={editor === "new" ? "new" : editor.id}
-              flight={editor === "new" ? null : editor}
-              airports={result.data.airports}
-              onClose={() => setEditor(null)}
-              onSaved={(message) => {
-                setEditor(null);
-                setNotice(message);
-                reload();
-              }}
-            />
-          ) : null}
-          <FlightList
-            flights={result.data.flights.filter(
-              (flight) =>
-                (active === "all" || flight.active === (active === "active")) &&
-                [flight.flightNumber, flight.origin, flight.destination]
-                  .join(" ")
-                  .toLowerCase()
-                  .includes(filter.toLowerCase().trim()),
-            )}
-            onEdit={(flight) => {
-              setEditor(flight);
-              setNotice("");
-            }}
-          />
-        </>
+        <FlightList
+          flights={result.data.flights.filter(
+            (flight) =>
+              (active === "all" || flight.active === (active === "active")) &&
+              [flight.flightNumber, flight.origin, flight.destination]
+                .join(" ")
+                .toLowerCase()
+                .includes(filter.toLowerCase().trim()),
+          )}
+          onEdit={(flight) => {
+            setEditor({ flight, airports: result.data.airports });
+            setNotice("");
+          }}
+        />
       )}
     </>
   );

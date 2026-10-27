@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { AppRole } from "@aeroquetzal/domain";
 import { anonymous, session } from "./fixtures";
-import { json, mockApi, renderApp } from "./helpers";
+import { deferred, json, mockApi, renderApp } from "./helpers";
 
 describe("sesión y permisos", () => {
   it("protege el acceso directo sin consultar datos internos", async () => {
@@ -110,6 +110,83 @@ describe("sesión y permisos", () => {
     );
     await screen.findByText("Usuario o contraseña incorrectos");
     expect(screen.getByLabelText("Contraseña")).toHaveValue("");
+  });
+  it("bloquea revalidaciones por foco durante logout y descarta respuestas tardías", async () => {
+    const closing = deferred<Response>();
+    const lateSession = deferred<Response>();
+    let reads = 0;
+    mockApi(session(), (path) => {
+      if (path.endsWith("/logout")) return closing.promise;
+      if (path.endsWith("/session") && ++reads > 1) return lateSession.promise;
+      return undefined;
+    });
+    renderApp("/check-in");
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Cerrar sesión" }),
+    );
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+    });
+    await act(async () => {
+      closing.resolve(new Response(null, { status: 204 }));
+    });
+    await screen.findByRole("heading", { name: "Iniciar sesión" });
+    await act(async () => {
+      lateSession.resolve(json(session()));
+    });
+    expect(
+      screen.getByRole("heading", { name: "Iniciar sesión" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    expect(reads).toBe(1);
+  });
+  it("ignora una revalidación iniciada antes de cerrar la sesión", async () => {
+    const lateSession = deferred<Response>();
+    let reads = 0;
+    mockApi(session(), (path) => {
+      if (path.endsWith("/logout")) return new Response(null, { status: 204 });
+      if (path.endsWith("/session") && ++reads > 1) return lateSession.promise;
+      return undefined;
+    });
+    renderApp("/check-in");
+    await screen.findByRole("button", { name: "Cerrar sesión" });
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+    });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Cerrar sesión" }),
+    );
+    await screen.findByRole("heading", { name: "Iniciar sesión" });
+    await act(async () => {
+      lateSession.resolve(json(session()));
+    });
+    expect(
+      screen.getByRole("heading", { name: "Iniciar sesión" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+  });
+  it("permite reintentar logout si falla el servicio", async () => {
+    let attempts = 0;
+    mockApi(session(), (path) =>
+      path.endsWith("/logout")
+        ? ++attempts === 1
+          ? json(
+              { code: "UNAVAILABLE", message: "No se pudo cerrar la sesión" },
+              503,
+            )
+          : new Response(null, { status: 204 })
+        : undefined,
+    );
+    renderApp("/check-in");
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Cerrar sesión" }),
+    );
+    await screen.findByText("No se pudo cerrar la sesión");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Cerrar sesión" }),
+    );
+    await screen.findByRole("heading", { name: "Iniciar sesión" });
+    expect(attempts).toBe(2);
   });
   it("retira datos privados y vuelve al login cuando la API devuelve 401", async () => {
     mockApi(session(), (path) =>

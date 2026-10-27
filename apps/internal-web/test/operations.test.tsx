@@ -1,10 +1,104 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { flight, instance, reservation, session } from "./fixtures";
-import { json, mockApi, renderApp } from "./helpers";
+import { deferred, json, mockApi, renderApp } from "./helpers";
 
 describe("vuelos y programación", () => {
+  it.each(["nuevo", "existente"])(
+    "conserva el borrador de vuelo %s durante carga, error y reintento",
+    async (mode) => {
+      const user = userEvent.setup();
+      const updating = deferred<Response>();
+      let reads = 0;
+      mockApi(session(), (path, init) =>
+        path.endsWith("/flights") && init?.method === "GET" && ++reads === 2
+          ? updating.promise
+          : undefined,
+      );
+      renderApp("/vuelos");
+      await screen.findByRole("table");
+      await user.click(
+        screen.getByRole("button", {
+          name: mode === "nuevo" ? "Nuevo vuelo" : "Editar AQ101",
+        }),
+      );
+      const number = screen.getByLabelText("Número de vuelo");
+      await user.clear(number);
+      await user.type(number, "AQ987");
+      await user.selectOptions(screen.getByLabelText("Origen"), "GUA");
+      await user.selectOptions(screen.getByLabelText("Destino"), "MEX");
+      await user.click(screen.getByRole("checkbox", { name: "Ruta activa" }));
+      await user.click(screen.getByRole("button", { name: "Actualizar" }));
+      expect(screen.getByLabelText("Número de vuelo")).toHaveValue("AQ987");
+      expect(screen.getByRole("status")).toBeInTheDocument();
+      await act(async () => {
+        updating.resolve(
+          json({ code: "UNAVAILABLE", message: "Catálogo no disponible" }, 503),
+        );
+      });
+      await screen.findByText("Catálogo no disponible");
+      expect(screen.getByLabelText("Número de vuelo")).toHaveValue("AQ987");
+      await user.click(screen.getByRole("button", { name: "Reintentar" }));
+      await screen.findByRole("table");
+      expect(screen.getByLabelText("Número de vuelo")).toHaveValue("AQ987");
+      expect(screen.getByLabelText("Origen")).toHaveValue("GUA");
+      expect(screen.getByLabelText("Destino")).toHaveValue("MEX");
+      expect(
+        screen.getByRole("checkbox", { name: "Ruta activa" }),
+      ).not.toBeChecked();
+    },
+  );
+  it("conserva el horario al recargar incluso si la consulta falla", async () => {
+    const user = userEvent.setup();
+    const updating = deferred<Response>();
+    let reads = 0;
+    mockApi(session(), (path, init) =>
+      path.endsWith("/flight-instances") &&
+      init?.method === "GET" &&
+      ++reads === 2
+        ? updating.promise
+        : undefined,
+    );
+    renderApp("/horarios");
+    await screen.findByRole("table");
+    await user.click(screen.getByRole("button", { name: "Programar salida" }));
+    await user.selectOptions(screen.getByLabelText("Vuelo"), "flight-1");
+    await user.selectOptions(screen.getByLabelText("Aeronave"), "aircraft-1");
+    fireEvent.change(screen.getByLabelText("Salida (Guatemala)"), {
+      target: { value: "2026-11-05T07:00" },
+    });
+    fireEvent.change(screen.getByLabelText("Llegada (Guatemala)"), {
+      target: { value: "2026-11-05T09:30" },
+    });
+    await user.clear(screen.getByLabelText("Capacidad"));
+    await user.type(screen.getByLabelText("Capacidad"), "50");
+    await user.click(screen.getByRole("button", { name: "Actualizar" }));
+    expect(screen.getByLabelText("Capacidad")).toHaveValue(50);
+    await act(async () => {
+      updating.resolve(
+        json({ code: "UNAVAILABLE", message: "Horarios no disponibles" }, 503),
+      );
+    });
+    await screen.findByText("Horarios no disponibles");
+    await user.click(screen.getByRole("button", { name: "Reintentar" }));
+    await screen.findByRole("table");
+    expect(screen.getByLabelText("Vuelo")).toHaveValue("flight-1");
+    expect(screen.getByLabelText("Aeronave")).toHaveValue("aircraft-1");
+    expect(screen.getByLabelText("Capacidad")).toHaveValue(50);
+    expect(screen.getByLabelText("Salida (Guatemala)")).toHaveValue(
+      "2026-11-05T07:00",
+    );
+    expect(screen.getByLabelText("Llegada (Guatemala)")).toHaveValue(
+      "2026-11-05T09:30",
+    );
+  });
   it("crea un vuelo con contratos compartidos y actualiza el listado", async () => {
     const user = userEvent.setup();
     const send = mockApi(session(["operator"]), (path, init) =>

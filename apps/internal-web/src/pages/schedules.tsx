@@ -334,7 +334,10 @@ export function SchedulesPage() {
     ]);
     return { instances, flights, aircraft };
   });
-  const [editing, setEditing] = useState(false);
+  const [editor, setEditor] = useState<{
+    flights: InternalFlight[];
+    aircraft: InternalAircraft[];
+  } | null>(null);
   const [notice, setNotice] = useState("");
   const [filter, setFilter] = useState("");
   const [date, setDate] = useState("");
@@ -362,7 +365,11 @@ export function SchedulesPage() {
         <Button
           disabled={result.status !== "success"}
           onClick={() => {
-            setEditing(true);
+            if (result.status !== "success") return;
+            setEditor({
+              flights: result.data.flights,
+              aircraft: result.data.aircraft,
+            });
             setNotice("");
           }}
         >
@@ -370,24 +377,24 @@ export function SchedulesPage() {
         </Button>
       </div>
       <InstanceFilters {...{ filter, date, setFilter, setDate, reload }} />
+      {editor ? (
+        <ScheduleEditor
+          flights={editor.flights}
+          aircraft={editor.aircraft}
+          onClose={() => setEditor(null)}
+          onSaved={() => {
+            setEditor(null);
+            setNotice("Horario creado.");
+            reload();
+          }}
+        />
+      ) : null}
       {result.status === "loading" ? (
         <Loading />
       ) : result.status === "error" ? (
         <ErrorState message={result.message} onRetry={reload} />
       ) : (
         <>
-          {editing ? (
-            <ScheduleEditor
-              flights={result.data.flights}
-              aircraft={result.data.aircraft}
-              onClose={() => setEditing(false)}
-              onSaved={() => {
-                setEditing(false);
-                setNotice("Horario creado.");
-                reload();
-              }}
-            />
-          ) : null}
           {!instances.length ? (
             <EmptyState title="Sin salidas para mostrar">
               Programa una salida o ajusta los filtros.
