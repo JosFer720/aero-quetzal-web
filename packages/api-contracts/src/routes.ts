@@ -17,6 +17,8 @@ export const publicRoutes = {
 } as const;
 
 export const internalRoutes = {
+  airports: `${INTERNAL_API_PREFIX}/airports`,
+  aircraft: `${INTERNAL_API_PREFIX}/aircraft`,
   flights: `${INTERNAL_API_PREFIX}/flights`,
   flight: (id: string) => `${INTERNAL_API_PREFIX}/flights/${encodeURIComponent(id)}`,
   flightInstances: `${INTERNAL_API_PREFIX}/flight-instances`,

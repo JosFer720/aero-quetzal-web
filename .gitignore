@@ -10,3 +10,5 @@ coverage/
 database/backups/
 database/generated/
 database/prisma/dev.db*
+playwright-report/
+test-results/

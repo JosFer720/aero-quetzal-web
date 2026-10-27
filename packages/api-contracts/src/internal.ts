@@ -10,7 +10,7 @@ import {
   reservationCodeSchema,
   reservationStatusSchema,
 } from "./common.js";
-import { passengerInputSchema } from "./public.js";
+import { airportSchema, passengerInputSchema } from "./public.js";
 
 export const sessionUserSchema = z.object({
   username: z.string().min(1).max(80),
@@ -73,7 +73,9 @@ export const createFlightInstanceRequestSchema = z
     capacity: z.number().int().positive().max(600),
   })
   .refine(
-    (value) => new Date(value.arrivalAt).getTime() > new Date(value.departureAt).getTime(),
+    (value) =>
+      new Date(value.arrivalAt).getTime() >
+      new Date(value.departureAt).getTime(),
     {
       message: "La llegada debe ser posterior a la salida",
       path: ["arrivalAt"],
@@ -137,10 +139,81 @@ export type LoginRequest = z.infer<typeof loginRequestSchema>;
 export type SessionResponse = z.infer<typeof sessionResponseSchema>;
 export type CreateFlightRequest = z.infer<typeof createFlightRequestSchema>;
 export type UpdateFlightRequest = z.infer<typeof updateFlightRequestSchema>;
-export type CreateFlightInstanceRequest = z.infer<typeof createFlightInstanceRequestSchema>;
-export type UpdateFlightStatusRequest = z.infer<typeof updateFlightStatusRequestSchema>;
+export type CreateFlightInstanceRequest = z.infer<
+  typeof createFlightInstanceRequestSchema
+>;
+export type UpdateFlightStatusRequest = z.infer<
+  typeof updateFlightStatusRequestSchema
+>;
 export type InternalReservation = z.infer<typeof internalReservationSchema>;
 export type CheckInRequest = z.infer<typeof checkInRequestSchema>;
 export type CheckInResponse = z.infer<typeof checkInResponseSchema>;
 export type AuditEventResponse = z.infer<typeof auditEventSchema>;
 export type DashboardResponse = z.infer<typeof dashboardResponseSchema>;
+
+// Respuestas JSON para la intranet. Las listas se devuelven como arrays sin envoltorio.
+export const internalAirportSchema = airportSchema.extend({
+  id: idSchema,
+  active: z.boolean(),
+});
+
+export const internalAircraftSchema = z.object({
+  id: idSchema,
+  registration: z.string().min(1).max(32),
+  model: z.string().min(1).max(120),
+  capacity: z.number().int().positive().max(600),
+  active: z.boolean(),
+});
+
+export const internalFlightSchema = z
+  .object({
+    id: idSchema,
+    flightNumber: flightNumberSchema,
+    origin: airportCodeSchema,
+    destination: airportCodeSchema,
+    durationMinutes: z.number().int().min(20).max(1440),
+    active: z.boolean(),
+  })
+  .refine((value) => value.origin !== value.destination, {
+    message: "El origen y el destino deben ser diferentes",
+  });
+
+export const internalFlightInstanceSchema = z
+  .object({
+    id: idSchema,
+    flightId: idSchema,
+    aircraftId: idSchema,
+    flightNumber: flightNumberSchema,
+    origin: airportCodeSchema,
+    destination: airportCodeSchema,
+    departureAt: isoDateTimeSchema,
+    arrivalAt: isoDateTimeSchema,
+    status: flightStatusSchema,
+    capacity: z.number().int().positive().max(600),
+    reservedSeats: z.number().int().min(0),
+    availableSeats: z.number().int().min(0),
+  })
+  .refine(
+    (value) => value.reservedSeats + value.availableSeats === value.capacity,
+    {
+      message: "El inventario de asientos no coincide con la capacidad",
+    },
+  )
+  .refine((value) => new Date(value.arrivalAt) > new Date(value.departureAt), {
+    message: "La llegada debe ser posterior a la salida",
+  });
+
+// Búsqueda de reservas por código, nombre, apellido o documento; siempre con sesión.
+export const internalReservationSearchSchema = z.object({
+  q: z.string().trim().min(2).max(120),
+});
+
+export type InternalAirport = z.infer<typeof internalAirportSchema>;
+export type InternalAircraft = z.infer<typeof internalAircraftSchema>;
+export type InternalFlight = z.infer<typeof internalFlightSchema>;
+export type InternalFlightInstance = z.infer<
+  typeof internalFlightInstanceSchema
+>;
+export type InternalReservationSearch = z.infer<
+  typeof internalReservationSearchSchema
+>;

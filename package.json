@@ -11,7 +11,9 @@
     "database"
   ],
   "scripts": {
-    "build": "npm run build --workspace @aeroquetzal/domain && npm run build --workspace @aeroquetzal/api-contracts && npm run build --workspace @aeroquetzal/database && npm run build --workspace @aeroquetzal/auth-service && npm run build --workspace site",
+    "dev:internal": "npm run dev --workspace @aeroquetzal/internal-web",
+    "test:e2e:internal": "npm run test:e2e --workspace @aeroquetzal/internal-web",
+    "build": "npm run build --workspace @aeroquetzal/domain && npm run build --workspace @aeroquetzal/api-contracts && npm run build --workspace @aeroquetzal/database && npm run build --workspace @aeroquetzal/auth-service && npm run build --workspace site && npm run build --workspace @aeroquetzal/internal-web",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run build --workspace @aeroquetzal/domain && npm run build --workspace @aeroquetzal/api-contracts && npm run typecheck --workspaces --if-present",
     "test": "npm run build && npm run test --workspaces --if-present",

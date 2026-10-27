@@ -1,0 +1,30 @@
+{
+  "name": "@aeroquetzal/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./theme.css": "./tokens/theme.css",
+    "./*": "./src/components/*.tsx"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src"
+  },
+  "peerDependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "dependencies": {
+    "@fontsource/archivo-black": "^5.3.0",
+    "@fontsource/space-grotesk": "^5.3.0",
+    "class-variance-authority": "^0.7.1",
+    "cn": "^0.4.0",
+    "radix-ui": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7"
+  }
+}
