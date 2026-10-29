@@ -1,0 +1,49 @@
+error_log /var/log/nginx/error.log crit;
+# Only these exact method/path combinations can reach business-api.
+map "$request_method:$uri" $aq_public_route {
+    default 0;
+    "GET:/api/v1/public/airports" 1;
+    "GET:/api/v1/public/flights" 1;
+    "POST:/api/v1/public/reservations" 1;
+    ~^GET:/api/v1/public/flights/[A-Za-z0-9_-]+/availability$ 1;
+    "~^GET:/api/v1/public/reservations/AQ[A-Z0-9]{5}$" 1;
+    "~^POST:/api/v1/public/reservations/AQ[A-Z0-9]{5}/cancel$" 1;
+    "~^GET:/api/v1/public/status/AQ[0-9]{3,4}$" 1;
+}
+limit_req_zone $binary_remote_addr zone=aq_public:10m rate=10r/s;
+log_format aq_safe '$remote_addr $request_method $uri $status';
+server {
+    listen 80;
+    server_name ${PUBLIC_HOST};
+    access_log /var/log/nginx/access.log aq_safe;
+    location ^~ /.well-known/acme-challenge/ { root /var/www/acme; }
+    location / { return 308 https://${PUBLIC_HOST}$request_uri; }
+}
+server {
+    listen 443 ssl;
+    server_name ${PUBLIC_HOST};
+    ssl_certificate /etc/aeroquetzal/tls/fullchain.pem;
+    ssl_certificate_key /etc/aeroquetzal/tls/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    access_log /var/log/nginx/access.log aq_safe;
+    include /etc/nginx/aq-headers.conf;
+    root /usr/share/nginx/html;
+    client_max_body_size 16k;
+    location /api/ {
+        if ($aq_public_route = 0) { return 404; }
+        limit_req zone=aq_public burst=20 nodelay;
+        proxy_pass http://${BUSINESS_UPSTREAM};
+        proxy_set_header X-AQ-Gateway-Token "${PUBLIC_GATEWAY_TOKEN}";
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header Cookie "";
+        proxy_set_header Authorization "";
+        proxy_hide_header Set-Cookie;
+        proxy_no_cache 1;
+        proxy_cache_bypass 1;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 20s;
+    }
+    location ~ ^/(login|privado|logout|dologin)(/|$) { return 404; }
+    location ~ /\. { deny all; }
+    location / { try_files $uri $uri/ /index.html; }
+}

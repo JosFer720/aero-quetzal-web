@@ -12,7 +12,7 @@ npm run build
 npm run dev:public
 ```
 
-Abre `http://127.0.0.1:5173`. El workspace conserva el nombre `site` para mantener compatibilidad con los scripts existentes. Vite dirige **únicamente** `/api/v1/public` a `http://127.0.0.1:8080`. Hasta que Nery implemente la API, las consultas normales muestran errores y permiten reintentar. No hay datos simulados en el bundle de producción ni variables nuevas de entorno del frontend.
+Abre `http://127.0.0.1:5173`. El workspace conserva el nombre `site` para mantener compatibilidad con los scripts existentes. Vite dirige **únicamente** `/api/v1/public` a `http://127.0.0.1:8080`. La API real está implementada en `services/business-api`; debe iniciarse con PostgreSQL para el desarrollo integrado. No hay datos simulados en el bundle de producción ni variables nuevas de entorno del frontend.
 
 ## Verificar
 

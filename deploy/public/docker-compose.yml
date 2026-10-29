@@ -1,0 +1,18 @@
+name: aeroquetzal-public
+services:
+  public-web:
+    image: aeroquetzal/public-web:${RELEASE:?set RELEASE}
+    container_name: aq-public-web
+    network_mode: host
+    restart: unless-stopped
+    env_file: [../secrets/public.env]
+    environment:
+      NGINX_ENVSUBST_FILTER: '^(PUBLIC_HOST|BUSINESS_UPSTREAM|PUBLIC_GATEWAY_TOKEN)$$'
+    volumes:
+      - ../secrets/public-tls:/etc/aeroquetzal/tls:ro
+      - acme:/var/www/acme:ro
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '3' }
+volumes:
+  acme:

@@ -1,0 +1,14 @@
+.git
+**/node_modules
+**/dist
+**/generated
+**/.env
+**/.env.*
+!.env.example
+**/test-results
+**/playwright-report
+database/backups
+deploy/artifacts
+deploy/secrets
+**/__pycache__
+**/*.tsbuildinfo

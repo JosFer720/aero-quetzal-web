@@ -1,0 +1,12 @@
+[Unit]
+Description=Route AeroQuetzal private services through Hetzner private network
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/ip route replace 10.10.0.0/24 via 172.20.0.1 dev enp7s0
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

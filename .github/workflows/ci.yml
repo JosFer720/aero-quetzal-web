@@ -1,0 +1,37 @@
+name: Integrated web
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: aeroquetzal_ci_test
+          POSTGRES_USER: aeroquetzal
+          POSTGRES_PASSWORD: ci-only-password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U aeroquetzal -d aeroquetzal_ci_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://aeroquetzal:ci-only-password@127.0.0.1:5432/aeroquetzal_ci_test
+      DATABASE_URL: postgresql://aeroquetzal:ci-only-password@127.0.0.1:5432/aeroquetzal_ci_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: npm }
+      - run: npm install --global npm@11.21.1
+      - run: npm ci
+      - run: npm run prisma:migrate:deploy --workspace @aeroquetzal/database
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: python3 deploy/test-compose.py
+      - run: deploy/test-gateway.sh
+      - run: npm exec --workspace @aeroquetzal/internal-web -- playwright install --with-deps chromium
+      - run: npm run test:e2e:public
+      - run: npm run test:e2e:internal
+      - run: npm run test:e2e:integrated

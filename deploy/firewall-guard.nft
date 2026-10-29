@@ -1,0 +1,22 @@
+# Additional restrictions only. Existing nftables rules must ALSO allow the approved flows.
+# Load in one transaction. Never run `flush ruleset`.
+table inet aq_web_guard {
+    chain forward {
+        type filter hook forward priority -20; policy accept;
+        ct state established,related accept
+        ip saddr 10.10.0.144/28 ip daddr { 10.10.0.103, 10.10.0.104, 10.10.0.105, 10.10.0.116 } drop
+        ip daddr 10.10.0.104 tcp dport 5432 ip saddr != { 10.10.0.103, 10.10.0.48/28 } drop
+        ip daddr 10.10.0.105 tcp dport 8081 ip saddr != { 10.10.0.103, 10.10.0.116 } drop
+        ip daddr 10.10.0.103 tcp dport 8080 ip saddr != { 172.20.0.2, 10.10.0.116, 10.10.0.48/28 } drop
+        ip daddr 10.10.0.116 tcp dport { 80, 443 } ip saddr != { 10.10.0.0/27, 10.10.0.32/28, 10.10.0.48/28, 10.10.0.64/28, 10.200.0.0/24 } drop
+    }
+}
+# Containers on the same bridge must not bypass database/Auth restrictions.
+table bridge aq_web_guard {
+    chain forward {
+        type filter hook forward priority -200; policy accept;
+        ether type ip ip daddr 10.10.0.104 tcp dport 5432 ip saddr != { 10.10.0.103, 10.10.0.48/28 } drop
+        ether type ip ip daddr 10.10.0.105 tcp dport 8081 ip saddr != { 10.10.0.103, 10.10.0.116 } drop
+        ether type ip ip daddr 10.10.0.103 tcp dport 8080 ip saddr != { 172.20.0.2, 10.10.0.116, 10.10.0.48/28 } drop
+    }
+}

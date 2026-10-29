@@ -1,0 +1,11 @@
+name: aeroquetzal-internal
+services:
+  internal-web:
+    image: aeroquetzal/internal-web:${RELEASE:?set RELEASE}
+    container_name: aq-internal-web
+    network_mode: none
+    restart: unless-stopped
+    volumes: [../secrets/internal-tls:/etc/aeroquetzal/tls:ro]
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '3' }

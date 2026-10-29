@@ -15,3 +15,9 @@ test-results/
 
 # Guía de estudio personal de Ian (sólo local)
 /GUIA_IAN_FASE3_Y_WEB.md
+
+# Deployment secrets and image exports
+deploy/secrets/
+deploy/artifacts/
+__pycache__/
+*.pyc

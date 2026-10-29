@@ -1,0 +1,25 @@
+{
+  "name": "@aeroquetzal/business-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node --env-file-if-exists=../../.env dist/main.js",
+    "lint": "oxlint src test e2e",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run test/integration.test.ts"
+  },
+  "dependencies": {
+    "@aeroquetzal/api-contracts": "0.1.0",
+    "@aeroquetzal/auth-service": "0.1.0",
+    "@aeroquetzal/database": "0.1.0",
+    "@aeroquetzal/domain": "0.1.0",
+    "@fastify/helmet": "13.2.0",
+    "@fastify/rate-limit": "^10.3.0",
+    "fastify": "5.12.7",
+    "zod": "4.6.7"
+  },
+  "devDependencies": { "@types/node": "24.13.3" }
+}

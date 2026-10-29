@@ -13,16 +13,19 @@
   "scripts": {
     "dev:internal": "npm run dev --workspace @aeroquetzal/internal-web",
     "test:e2e:internal": "npm run test:e2e --workspace @aeroquetzal/internal-web",
-    "build": "npm run build --workspace @aeroquetzal/domain && npm run build --workspace @aeroquetzal/api-contracts && npm run build --workspace @aeroquetzal/database && npm run build --workspace @aeroquetzal/auth-service && npm run build --workspace site && npm run build --workspace @aeroquetzal/internal-web",
-    "lint": "npm run lint --workspaces --if-present",
-    "typecheck": "npm run build --workspace @aeroquetzal/domain && npm run build --workspace @aeroquetzal/api-contracts && npm run typecheck --workspaces --if-present",
+    "build": "npm run build --workspace @aeroquetzal/domain && npm run build --workspace @aeroquetzal/api-contracts && npm run build --workspace @aeroquetzal/database && npm run build --workspace @aeroquetzal/auth-service && npm run build --workspace @aeroquetzal/business-api && npm run build --workspace site && npm run build --workspace @aeroquetzal/internal-web",
+    "lint": "npm run lint --workspaces --if-present && oxlint tests",
+    "typecheck": "npm run build --workspace @aeroquetzal/domain && npm run build --workspace @aeroquetzal/api-contracts && npm run typecheck --workspaces --if-present && tsc -p tests/tsconfig.json",
     "test": "npm run build && npm run test --workspaces --if-present",
     "db:generate": "npm run prisma:generate --workspace @aeroquetzal/database",
     "db:validate": "npm run prisma:validate --workspace @aeroquetzal/database",
     "db:seed": "npm run prisma:seed --workspace @aeroquetzal/database",
     "dev:public": "npm run dev --workspace site",
     "test:e2e:public": "npm run test:e2e --workspace site",
-    "dev:public:test": "npm run dev:test --workspace site"
+    "dev:public:test": "npm run dev:test --workspace site",
+    "dev:api": "npm run start --workspace @aeroquetzal/business-api",
+    "test:integration": "npm run test:integration --workspace @aeroquetzal/business-api",
+    "test:e2e:integrated": "playwright test -c tests/e2e/playwright.config.ts"
   },
   "devDependencies": {
     "oxlint": "1.81.0",

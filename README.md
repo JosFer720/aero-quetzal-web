@@ -2,11 +2,17 @@
 
 Monorepo del proyecto de Redes. El alcance y la secuencia de turnos están en [la guía del equipo](GUIA_WEB_EQUIPO_AEROQUETZAL.md).
 
+## Entrega de Nery: API e integración
+
+`services/business-api` implementa búsqueda, disponibilidad, reservas gratuitas, consulta verificada, cancelación, vuelos/horarios, Check-In, auditoría, dashboard, autorización de Hugo, rate limiting y health de PostgreSQL. Las operaciones de inventario son transaccionales y controlan concurrencia.
+
+`npm run test:e2e:integrated` recorre las dos webs con PostgreSQL y la API real. Requiere `TEST_DATABASE_URL` de una base exclusiva terminada en `_test`; el directorio LDAP es simulado sólo en pruebas. CI ejecuta todas las suites. Consulta [la API](services/business-api/README.md) y [el despliegue](deploy/README.md) para los pasos, límites y validación de producción.
+
 ## Entrega de Ian: web pública
 
 `apps/public-web` implementa el portal de AeroQuetzal con búsqueda de vuelos, cupos, pasajeros, reserva gratuita, confirmación con código, consulta por código/documento, cancelación y estado de vuelo. Conserva el diseño original mediante `packages/ui`, consume los contratos compartidos y agrega pruebas de componentes y Playwright en escritorio y móvil.
 
-Ejecuta `npm run dev:public` para abrir `http://127.0.0.1:5173` y `npm run test:e2e:public` para los recorridos de navegador. El servidor de desarrollo dirige `/api/v1/public` a la futura API en `127.0.0.1:8080`. Esa API sigue pendiente del turno de Nery; las pruebas usan una fixture exclusiva de test, sin introducir datos ficticios en producción.
+Ejecuta `npm run dev:public` para abrir `http://127.0.0.1:5173` y `npm run test:e2e:public` para los recorridos de navegador. El servidor de desarrollo dirige `/api/v1/public` a la API en `127.0.0.1:8080`. La API de Nery está en `services/business-api`; las pruebas propias del frontend conservan su fixture exclusiva de test.
 
 Consulta [la entrega técnica pública](apps/public-web/README.md) para ejecutar las pruebas e integrar el frontend. La documentación de infraestructura describe un estado histórico; esta entrega no verifica ni modifica Hetzner.
 
@@ -34,7 +40,7 @@ Para usar Auth real, prepara `.env` fuera de Git con un `SESSION_SECRET` aleator
 npm run start --workspace @aeroquetzal/auth-service
 ```
 
-La API de negocio aún corresponde al turno de Nery. Hasta que exista, las pantallas muestran errores y permiten reintentar; no sustituyen datos reales por datos simulados. Los datos y usuarios ficticios están exclusivamente en las pruebas. No se configuraron usuarios LDAP, firewall, redes ni servidores durante este turno.
+La API de negocio está implementada en `services/business-api`. Iníciala con `npm run dev:api`, con PostgreSQL migrado y Auth disponible. Los datos y usuarios ficticios están exclusivamente en las pruebas.
 
 ## Verificación
 

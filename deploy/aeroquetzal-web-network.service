@@ -1,0 +1,13 @@
+[Unit]
+Description=Attach AeroQuetzal web containers to existing isolated bridges
+After=docker.service aeroquetzal-network.service
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/lib/aeroquetzal-web/maintain-network.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

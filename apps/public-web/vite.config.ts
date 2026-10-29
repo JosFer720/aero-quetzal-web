@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
     proxy: {
       "/api/v1/public": {
         target:
-          mode === "e2e" ? "http://127.0.0.1:18082" : "http://127.0.0.1:8080",
+          mode === "e2e" ? "http://127.0.0.1:18082" : mode === "integration" ? "http://127.0.0.1:18080" : "http://127.0.0.1:8080",
       },
     },
   },

@@ -15,7 +15,7 @@ export function createPrismaClient(
     log:
       process.env.NODE_ENV === "development"
         ? ["warn", "error"]
-        : ["error"],
+        : [],
   });
 }
 
