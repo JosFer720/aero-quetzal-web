@@ -26,6 +26,12 @@ else:
     anchor = "        udp dport 51820 accept"
     if original.count(anchor) != 1:
         raise SystemExit("La configuración base cambió; revisar manualmente")
-    updated = original.replace(anchor, anchor + '\n        # Public web only; no DNAT or internal service publication.\n        iifname "eth0" tcp dport { 80, 443 } accept')
+    rules = []
+    public_rule = '        iifname "eth0" tcp dport { 80, 443 } accept'
+    visitor_rule = '        iifname "aq-visitor" ip saddr 10.10.0.144/28 ip daddr 178.104.151.184 tcp dport { 80, 443 } accept'
+    for rule in [public_rule, visitor_rule]:
+        if rule.strip() not in original:
+            rules.append(rule)
+    updated = original.replace(anchor, anchor + ('\n        # Public web only; no DNAT or internal service publication.\n' + '\n'.join(rules) if rules else ''))
 args.output.write_text(updated)
 print("Configuración preparada para revisión:", args.output)

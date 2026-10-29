@@ -1,0 +1,11 @@
+[Unit]
+Description=Check the AeroQuetzal short-lived certificate every six hours
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:00:00
+RandomizedDelaySec=15min
+Persistent=true
+Unit=aeroquetzal-public-tls.service
+
+[Install]
+WantedBy=timers.target

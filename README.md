@@ -8,13 +8,15 @@ Monorepo del proyecto de Redes. El alcance y la secuencia de turnos están en [l
 
 `npm run test:e2e:integrated` recorre las dos webs con PostgreSQL y la API real. Requiere `TEST_DATABASE_URL` de una base exclusiva terminada en `_test`; el directorio LDAP es simulado sólo en pruebas. CI ejecuta todas las suites. Consulta [la API](services/business-api/README.md) y [el despliegue](deploy/README.md) para los pasos, límites y validación de producción.
 
+La versión integrada está ejecutándose en Hetzner desde el 29/10/2026. Portal público: [https://178.104.151.184](https://178.104.151.184). La intranet permanece en `https://intranet.aeroquetzal.internal`, accesible desde empleados y VPN con su CA interna. Se verificaron LDAP real, reserva → Check-In, permisos, inventario, auditoría y persistencia tras reiniciar los contenedores. Consulta [el estado comprobado del despliegue](deploy/ESTADO_2026-10-29.md). La semilla ofrece vuelos los días **5 y 6 de noviembre de 2026**.
+
 ## Entrega de Ian: web pública
 
 `apps/public-web` implementa el portal de AeroQuetzal con búsqueda de vuelos, cupos, pasajeros, reserva gratuita, confirmación con código, consulta por código/documento, cancelación y estado de vuelo. Conserva el diseño original mediante `packages/ui`, consume los contratos compartidos y agrega pruebas de componentes y Playwright en escritorio y móvil.
 
 Ejecuta `npm run dev:public` para abrir `http://127.0.0.1:5173` y `npm run test:e2e:public` para los recorridos de navegador. El servidor de desarrollo dirige `/api/v1/public` a la API en `127.0.0.1:8080`. La API de Nery está en `services/business-api`; las pruebas propias del frontend conservan su fixture exclusiva de test.
 
-Consulta [la entrega técnica pública](apps/public-web/README.md) para ejecutar las pruebas e integrar el frontend. La documentación de infraestructura describe un estado histórico; esta entrega no verifica ni modifica Hetzner.
+Consulta [la entrega técnica pública](apps/public-web/README.md) para ejecutar las pruebas e integrar el frontend. El estado histórico de infraestructura se complementa con la revisión remota documentada en el estado de despliegue anterior.
 
 ## Entrega de Javier: intranet
 

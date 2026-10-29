@@ -73,4 +73,4 @@ Nery debe:
 5. Aplicar rate limiting, límites de cuerpos, encabezados de seguridad y validación del lado servidor.
 6. Validar PostgreSQL real, concurrencia, integración con intranet/Check-In, persistencia y ACL. Los E2E locales no cubren esas garantías.
 
-No se modificaron redes, firewall, DNS, LDAP, servidores ni despliegues. No hay migraciones nuevas ni secretos nuevos en esta entrega.
+La entrega inicial del frontend no modificó infraestructura. La integración posterior de Nery sí está desplegada en Hetzner; consulta [su estado comprobado](../../deploy/ESTADO_2026-10-29.md), separado de las fixtures de estas pruebas.

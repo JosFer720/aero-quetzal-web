@@ -1,0 +1,10 @@
+[Unit]
+Description=Renew and install the trusted AeroQuetzal public IP certificate
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/aeroquetzal-web/renew-public-tls.sh
+TimeoutStartSec=10min
