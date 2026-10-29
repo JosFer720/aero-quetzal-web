@@ -19,7 +19,10 @@
     "test": "npm run build && npm run test --workspaces --if-present",
     "db:generate": "npm run prisma:generate --workspace @aeroquetzal/database",
     "db:validate": "npm run prisma:validate --workspace @aeroquetzal/database",
-    "db:seed": "npm run prisma:seed --workspace @aeroquetzal/database"
+    "db:seed": "npm run prisma:seed --workspace @aeroquetzal/database",
+    "dev:public": "npm run dev --workspace site",
+    "test:e2e:public": "npm run test:e2e --workspace site",
+    "dev:public:test": "npm run dev:test --workspace site"
   },
   "devDependencies": {
     "oxlint": "1.81.0",

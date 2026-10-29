@@ -2,6 +2,14 @@
 
 Monorepo del proyecto de Redes. El alcance y la secuencia de turnos están en [la guía del equipo](GUIA_WEB_EQUIPO_AEROQUETZAL.md).
 
+## Entrega de Ian: web pública
+
+`apps/public-web` implementa el portal de AeroQuetzal con búsqueda de vuelos, cupos, pasajeros, reserva gratuita, confirmación con código, consulta por código/documento, cancelación y estado de vuelo. Conserva el diseño original mediante `packages/ui`, consume los contratos compartidos y agrega pruebas de componentes y Playwright en escritorio y móvil.
+
+Ejecuta `npm run dev:public` para abrir `http://127.0.0.1:5173` y `npm run test:e2e:public` para los recorridos de navegador. El servidor de desarrollo dirige `/api/v1/public` a la futura API en `127.0.0.1:8080`. Esa API sigue pendiente del turno de Nery; las pruebas usan una fixture exclusiva de test, sin introducir datos ficticios en producción.
+
+Consulta [la entrega técnica pública](apps/public-web/README.md) para ejecutar las pruebas e integrar el frontend. La documentación de infraestructura describe un estado histórico; esta entrega no verifica ni modifica Hetzner.
+
 ## Entrega de Javier: intranet
 
 `apps/internal-web` implementa login/logout con Auth de Hugo, rutas y navegación por rol, panel, creación/edición/desactivación de vuelos, programación y cambios de estado, disponibilidad, búsqueda de pasajeros/reservas, Check-In con asiento automático e historial de auditoría. Usa React, Vite, Tailwind y los contratos de Milton. No almacena contraseñas, cookies ni tokens en localStorage/sessionStorage; CSRF permanece en memoria. El backend conserva la autorización definitiva.

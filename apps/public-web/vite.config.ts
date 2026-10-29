@@ -1,22 +1,20 @@
-import path from 'node:path'
-import tailwindcss from '@tailwindcss/vite'
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import path from "node:path";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      '@': path.resolve(import.meta.dirname, './src'),
-    },
-  },
-  build: {
-    rollupOptions: {
-      input: {
-        portada: path.resolve(import.meta.dirname, 'index.html'),
-        login: path.resolve(import.meta.dirname, 'login/index.html'),
-        privado: path.resolve(import.meta.dirname, 'privado/index.html'),
+  resolve: { alias: { "@": path.resolve(import.meta.dirname, "./src") } },
+  server: {
+    host: "127.0.0.1",
+    port: 5173,
+    strictPort: true,
+    proxy: {
+      "/api/v1/public": {
+        target:
+          mode === "e2e" ? "http://127.0.0.1:18082" : "http://127.0.0.1:8080",
       },
     },
   },
-})
+}));

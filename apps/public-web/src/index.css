@@ -4,11 +4,46 @@
 @import "@aeroquetzal/ui/theme.css";
 @source "../../../packages/ui/src";
 
-@keyframes cinta {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+html {
+  scroll-behavior: smooth;
 }
-
-@utility animate-cinta {
-  animation: cinta 25s linear infinite;
+section[id] {
+  scroll-margin-top: 2rem;
+}
+button,
+input,
+select,
+a {
+  touch-action: manipulation;
+}
+input,
+select {
+  max-width: 100%;
+}
+:focus-visible {
+  outline: 3px solid #000;
+  outline-offset: 4px;
+}
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -6rem;
+  z-index: 10;
+  padding: 1rem;
+  background: var(--primary);
+  border: 2px solid;
+}
+.skip-link:focus {
+  top: 1rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
