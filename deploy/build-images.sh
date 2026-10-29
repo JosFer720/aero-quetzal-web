@@ -11,7 +11,7 @@ for target in build runtime public-web internal-web; do
   name="$target"
   [[ "$target" != runtime ]] || name=server
   [[ "$target" != build ]] || name=migrate
-  docker build --platform linux/amd64 --target "$target" -f deploy/Dockerfile -t "aeroquetzal/$name:$release" .
+  docker build --network host --platform linux/amd64 --target "$target" -f deploy/Dockerfile -t "aeroquetzal/$name:$release" .
 done
 mkdir -p deploy/artifacts
 docker pull --platform linux/amd64 postgres:18-alpine
