@@ -6,6 +6,15 @@ test_dir="$(mktemp -d)"
 test_network="aq-gateway-test-$$"
 test_upstream="aq-upstream-test-$$"
 test_gateway="aq-gateway-test-$$"
+# Git Bash otherwise rewrites container paths such as /etc/nginx into Windows paths.
+# Only bind sources and OpenSSL output files use host-native paths.
+bind_root="$PWD"
+bind_tls="$test_dir"
+if command -v cygpath >/dev/null 2>&1; then
+  bind_root="$(cygpath -m "$PWD")"
+  bind_tls="$(cygpath -m "$test_dir")"
+  export MSYS_NO_PATHCONV=1
+fi
 cleanup() {
   docker rm -f "$test_gateway" "$test_upstream" >/dev/null 2>&1 || true
   docker network rm "$test_network" >/dev/null 2>&1 || true
@@ -13,24 +22,24 @@ cleanup() {
 }
 trap cleanup EXIT
 openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=localhost \
-  -keyout "$test_dir/privkey.pem" -out "$test_dir/fullchain.pem" >/dev/null 2>&1
+  -keyout "$bind_tls/privkey.pem" -out "$bind_tls/fullchain.pem" >/dev/null 2>&1
 docker network create "$test_network" >/dev/null
 docker run -d --name "$test_upstream" --network "$test_network" node:24-bookworm-slim \
   node -e 'require("node:http").createServer((q,s)=>{s.setHeader("Set-Cookie","private=should-not-leak");s.setHeader("Content-Type","application/json");s.end(JSON.stringify({token:q.headers["x-aq-gateway-token"],cookie:q.headers.cookie??null}));}).listen(8080,"0.0.0.0")' >/dev/null
 docker run -d --name "$test_gateway" --network "$test_network" -p 127.0.0.1:18443:443 \
   -e PUBLIC_HOST=localhost -e BUSINESS_UPSTREAM="$test_upstream:8080" -e PUBLIC_GATEWAY_TOKEN=gateway-test-only \
   -e 'NGINX_ENVSUBST_FILTER=^(PUBLIC_HOST|BUSINESS_UPSTREAM|PUBLIC_GATEWAY_TOKEN)$' \
-  -v "$PWD/deploy/public/default.conf.template:/etc/nginx/templates/default.conf.template:ro" \
-  -v "$PWD/deploy/headers.conf:/etc/nginx/aq-headers.conf:ro" \
-  -v "$PWD/apps/public-web/dist:/usr/share/nginx/html:ro" \
-  -v "$test_dir:/etc/aeroquetzal/tls:ro" nginx:stable-alpine >/dev/null
+  -v "$bind_root/deploy/public/default.conf.template:/etc/nginx/templates/default.conf.template:ro" \
+  -v "$bind_root/deploy/headers.conf:/etc/nginx/aq-headers.conf:ro" \
+  -v "$bind_root/apps/public-web/dist:/usr/share/nginx/html:ro" \
+  -v "$bind_tls:/etc/aeroquetzal/tls:ro" nginx:stable-alpine >/dev/null
 for attempt in $(seq 1 30); do
   if curl -ksf https://127.0.0.1:18443/ >/dev/null; then break; fi
   if [[ "$attempt" == 30 ]]; then docker logs "$test_gateway"; exit 1; fi
   sleep 1
 done
 docker exec "$test_gateway" nginx -t
-python3 - <<'PY'
+"${PYTHON:-python3}" - <<'PY'
 import json, ssl, urllib.error, urllib.request
 context = ssl._create_unverified_context()  # Disposable local test certificate only.
 def request(method, path):

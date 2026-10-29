@@ -32,6 +32,10 @@ python3 deploy/test-compose.py
 deploy/test-gateway.sh
 ```
 
+`typecheck` compila primero dominio, contratos, base de datos y Auth mediante `build:shared`. Esto permite ejecutar la misma secuencia en un checkout limpio de CI sin depender de archivos `dist` de una ejecución anterior.
+
+En Windows, inicia Docker Desktop y usa Git Bash para `test-gateway.sh`. Si Python sólo está disponible como `python`, ejecuta `PYTHON=python bash deploy/test-gateway.sh`. La prueba convierte las rutas de montaje de Windows y evita que MSYS reescriba las rutas internas del contenedor. Sus certificados y su token son desechables y exclusivos de esta prueba.
+
 Después de guardar y publicar el commit completo en `main`:
 
 ```bash
