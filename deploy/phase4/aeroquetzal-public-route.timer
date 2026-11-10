@@ -1,0 +1,11 @@
+[Unit]
+Description=Restore AeroQuetzal private route after DHCP network changes
+
+[Timer]
+OnBootSec=20s
+OnUnitActiveSec=30s
+AccuracySec=3s
+Unit=aeroquetzal-public-route.service
+
+[Install]
+WantedBy=timers.target

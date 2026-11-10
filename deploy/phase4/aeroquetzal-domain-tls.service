@@ -1,0 +1,9 @@
+[Unit]
+Description=Renew AeroQuetzal public domain TLS certificate
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/aeroquetzal-phase4/renew-domain-tls.sh
+TimeoutStartSec=10min

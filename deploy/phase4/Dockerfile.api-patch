@@ -1,0 +1,5 @@
+FROM aeroquetzal/server:09b6ced445a8
+COPY --chown=node:node service.js service.js.map /workspace/services/business-api/dist/
+COPY --chown=node:node service.ts /workspace/services/business-api/src/service.ts
+LABEL org.opencontainers.image.revision="1bcd21637d9077e828de72cc9f54e1e9b966e48d"
+LABEL org.opencontainers.image.description="AeroQuetzal phase 4: departure cutoffs and atomic flight cancellation"

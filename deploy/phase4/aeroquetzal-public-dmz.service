@@ -1,0 +1,8 @@
+[Unit]
+Description=Attach the public AeroQuetzal web to its isolated DMZ
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/aeroquetzal-phase4/public-dmz.sh

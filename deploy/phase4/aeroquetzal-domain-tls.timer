@@ -1,0 +1,10 @@
+[Unit]
+Description=Renew AeroQuetzal domain certificate automatically
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

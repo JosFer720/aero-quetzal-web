@@ -1,0 +1,8 @@
+[Unit]
+Description=Collect read-only SNMPv3 metrics from the TI segment
+After=docker.service aeroquetzal-containers.service snmpd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/aeroquetzal-phase4/snmp-collect.py
+UMask=0077

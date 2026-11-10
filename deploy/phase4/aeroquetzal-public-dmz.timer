@@ -1,0 +1,10 @@
+[Unit]
+Description=Maintain the isolated public DMZ after container restarts
+
+[Timer]
+OnBootSec=10s
+OnUnitActiveSec=5s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target
