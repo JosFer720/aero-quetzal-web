@@ -152,9 +152,10 @@ export class BusinessService {
     return this.transaction(async (tx) => {
       let row = await this.booking(tx, code);
       this.verify(row, document);
-      await this.lockInstance(tx, row.flightInstanceId);
+      const instance = await this.lockInstance(tx, row.flightInstanceId);
       row = await this.booking(tx, code);
-      if (row.status !== "CONFIRMED" || row.passengers.some((link) => link.checkIn)) conflict("La reserva no puede cancelarse");
+      if (row.status !== "CONFIRMED" || row.passengers.some((link) => link.checkIn) ||
+          instance.departureAt <= this.now() || !["SCHEDULED", "BOARDING"].includes(instance.status)) conflict("La reserva no puede cancelarse");
       await createRepositories(tx).reservations.updateStatus(row.id, "CANCELLED", this.now());
       await createRepositories(tx).flightInstances.adjustReservedSeats(row.flightInstanceId, -row.passengerCount);
       await this.audit(tx, "public", "RESERVATION_CANCELLED", "Reservation", row.id);
@@ -231,7 +232,15 @@ export class BusinessService {
     return this.transaction(async (tx) => {
       const current = await this.lockInstance(tx, id);
       assertFlightTransition(current.status, body.status);
-      const row = await tx.flightInstance.update({ where: { id }, data: { status: body.status }, include: instanceInclude });
+      if (body.status === "CANCELLED") {
+        if (await tx.reservation.count({ where: { flightInstanceId: id, status: "CHECKED_IN" } })) {
+          conflict("El vuelo tiene pasajeros con Check-In; no puede cancelarse por este flujo");
+        }
+        const affected = await tx.reservation.findMany({ where: { flightInstanceId: id, status: "CONFIRMED" }, select: { id: true } });
+        await tx.reservation.updateMany({ where: { flightInstanceId: id, status: "CONFIRMED" }, data: { status: "CANCELLED", cancelledAt: this.now() } });
+        for (const booking of affected) await this.audit(tx, actor, "RESERVATION_CANCELLED_WITH_FLIGHT", "Reservation", booking.id);
+      }
+      const row = await tx.flightInstance.update({ where: { id }, data: { status: body.status, ...(body.status === "CANCELLED" ? { reservedSeats: 0 } : {}) }, include: instanceInclude });
       await this.audit(tx, actor, "FLIGHT_STATUS_UPDATED", "FlightInstance", row.id);
       return instanceDto(row);
     });
@@ -253,7 +262,8 @@ export class BusinessService {
         throw new BusinessError(400, "INVALID_PASSENGERS", "El Check-In debe incluir a todos los pasajeros de la reserva");
       }
       if (row.status === "CHECKED_IN") return this.checkInDto(row);
-      if (row.status !== "CONFIRMED" || !["SCHEDULED", "BOARDING"].includes(instance.status)) conflict("La reserva o el vuelo no permiten Check-In");
+      if (row.status !== "CONFIRMED" || instance.departureAt <= this.now() ||
+          !["SCHEDULED", "BOARDING"].includes(instance.status)) conflict("La reserva o el vuelo no permiten Check-In");
       const occupied = new Set((await tx.seatAssignment.findMany({ where: { flightInstanceId: instance.id } })).map((seat) => seat.seatNumber));
       let index = 0;
       for (const link of row.passengers) {

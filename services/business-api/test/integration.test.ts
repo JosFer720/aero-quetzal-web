@@ -176,6 +176,37 @@ describe.skipIf(!connection)("API con PostgreSQL real y Auth de Hugo", () => {
     expect((await api.inject({ url: "/api/v1/internal/reservations?q=Ana", headers })).json()[0].code).toBe(code);
     expect((await api.inject({ url: `/api/v1/internal/reservations/${code}`, headers })).json().passengers[0].documentNumber).toBe("P1234567");
   });
+  it("rechaza Check-In y cancelación desde la hora de salida aunque el estado esté atrasado", async () => {
+    const code = (await new BusinessService(db).reserve(input())).code;
+    const late = new BusinessService(db, () => new Date("2099-11-05T13:00:00Z"));
+    await expect(late.checkIn("checkin", code, {})).rejects.toMatchObject({ status: 409 });
+    await expect(late.cancel(code, "P1234567")).rejects.toMatchObject({ status: 409 });
+    expect(await db.checkIn.count()).toBe(0);
+    expect((await db.reservation.findUniqueOrThrow({ where: { code } })).status).toBe("CONFIRMED");
+    expect((await db.flightInstance.findUniqueOrThrow({ where: { id: instanceId } })).reservedSeats).toBe(1);
+  });
+  it("cancelar un vuelo cancela reservas, libera inventario y registra auditoría en una transacción", async () => {
+    const service = new BusinessService(db);
+    const codes = await Promise.all(["P1234567", "P7654321"].map(async document => (await service.reserve(input(document))).code));
+    const result = await service.updateStatus("admin", instanceId, { status: "CANCELLED" });
+    expect(result).toMatchObject({ status: "CANCELLED", reservedSeats: 0 });
+    for (const code of codes) {
+      const booking = await db.reservation.findUniqueOrThrow({ where: { code } });
+      expect(booking.status).toBe("CANCELLED");
+      expect(booking.cancelledAt).not.toBeNull();
+    }
+    expect(await db.auditEvent.count({ where: { action: "RESERVATION_CANCELLED_WITH_FLIGHT" } })).toBe(2);
+    expect((await service.availability(instanceId)).availableSeats).toBe(0);
+  });
+  it("no cancela un vuelo con Check-In ni modifica sus reservas e inventario", async () => {
+    const service = new BusinessService(db);
+    const code = (await service.reserve(input())).code;
+    await service.checkIn("checkin", code, {});
+    await expect(service.updateStatus("admin", instanceId, { status: "CANCELLED" })).rejects.toMatchObject({ status: 409 });
+    expect((await db.flightInstance.findUniqueOrThrow({ where: { id: instanceId } })).status).toBe("SCHEDULED");
+    expect((await db.reservation.findUniqueOrThrow({ where: { code } })).status).toBe("CHECKED_IN");
+    expect(await db.seatAssignment.count()).toBe(1);
+  });
   it("rechaza anónimos, CSRF inválido, roles insuficientes y gateway falso", async () => {
     expect((await api.inject("/api/v1/internal/flights")).statusCode).toBe(401);
     expect((await api.inject("/api/v1/public/airports")).statusCode).toBe(403);
