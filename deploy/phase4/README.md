@@ -7,6 +7,15 @@ Estado: 10/11/2026. Estos archivos corresponden a cambios reales sobre las dos V
 - Pública: `https://aeroquetzal.178.104.151.184.sslip.io`.
 - Intranet por VPN: `https://intranet.aeroquetzal.internal`.
 - Colector SNMP: en `core-app`, `sudo systemctl start aeroquetzal-snmp.service` y `sudo cat /var/lib/aeroquetzal-snmp/latest.json`.
+- Panel gráfico desde TI: `http://snmp.aeroquetzal.internal:8080` (`10.10.0.53`).
+
+Desde el Mac del administrador, mantener activa la VPN y ejecutar:
+
+```bash
+ssh -N -L 127.0.0.1:18088:10.10.0.53:8080 -i ~/.ssh/aeroquetzal_hetzner root@172.20.0.3
+```
+
+Después abrir `http://127.0.0.1:18088`. El panel continúa siendo exclusivo del segmento TI: el túnel SSH administrativo termina en el núcleo y su conexión al panel sale desde la interfaz TI `.49`. No se abre el puerto a todas las IP de WireGuard. Cerrar el túnel al terminar; para volver a abrirlo se usa el mismo comando.
 
 ## SNMP
 
@@ -15,6 +24,16 @@ Paquetes oficiales Ubuntu `snmp` y `snmpd`. En el bastión se descargan los `.de
 Los clientes se configuran en `/etc/aeroquetzal/snmp/edge/snmp.conf` y `/etc/aeroquetzal/snmp/core/snmp.conf`, con permisos 0600. Los agentes usan SNMPv3 SHA-256/AES, `authPriv`, usuario `aqmonitor` y vistas sólo de lectura. Escuchan en `172.20.0.2:161` y `10.10.0.49:161`, respectivamente. El único origen habilitado es `10.10.0.52`.
 
 Instalar `snmp-collect.py` en `/usr/local/lib/aeroquetzal-phase4/` y sus unidades systemd en `/etc/systemd/system/`. El proceso usa el namespace de `ti01`, no una red con IP inventada. Instalar el drop-in `snmpd-edge.conf` o `snmpd-core.conf` en `/etc/systemd/system/snmpd.service.d/aeroquetzal.conf`, según la VM.
+
+## Extra: panel gráfico SNMP exclusivo de TI
+
+`install-snmp-panel.py` instala un panel propio y liviano en `/opt/aeroquetzal-snmp-panel`. El contenedor `aq-snmp-panel` utiliza la imagen Nginx existente, sin root, sin capacidades Linux, con raíz de sólo lectura y sin publicación de puertos del host. `snmp-panel-network.sh` lo conecta a `br-ti` con `10.10.0.53/28`, gateway `10.10.0.49`. Su timer recupera el enlace tras reinicios.
+
+`snmp_panel.py` amplía el colector con tablas de interfaces y contadores de tráfico de 64 bits. Publica exclusivamente métricas sanitizadas en `/var/lib/aeroquetzal-snmp/panel/{metrics,history}.json`; ese directorio se monta en sólo lectura en el contenedor. Las credenciales SNMP no se montan ni se envían al navegador. El historial conserva hasta 48 horas / 2880 muestras, sobreviviendo reinicios. Las tasas se calculan sólo después de una segunda muestra y se invalidan cuando reinicia un agente.
+
+Las ACL de nftables y Nginx permiten únicamente TI `10.10.0.48/28`; se bloquearon también el acceso directo desde VPN y la salida arbitraria iniciada por el panel. La interfaz contiene gráficas de carga, RAM usada sin caché, Mbps y estado de interfaces; mantiene el diseño base de AeroQuetzal y funciona en móvil sin dependencias externas. No se instalaron Grafana ni Prometheus.
+
+Pruebas: `test_snmp_panel.py` valida conversión de datos, tasas, reinicios y retención; `verify-panel-acl.py` comprueba aislamiento desde los namespaces reales; `verify-panel.mjs` valida el navegador usando el túnel administrativo y datos reales. Las fuentes locales del panel incluyen sus licencias.
 
 ## DMZ, dominio y certificados
 
@@ -45,4 +64,4 @@ En macOS, `aeroquetzal.internal.resolver` se instala en `/etc/resolver/aeroquetz
 - `verify-persistence.py`: reutiliza el resultado anterior para comprobar la reserva/asiento después de reiniciar servicios; no crea nuevas reservas.
 - Los scripts de pruebas del Mac usan las rutas de esta instalación. En otro equipo se deben adaptar las rutas de identidad SSH y certificado público, sin copiar claves privadas al repositorio.
 
-Se verificaron reinicios de los nuevos contenedores, agentes y recarga de nftables; no se reiniciaron completamente las VM. No se instaló el panel gráfico SNMP opcional.
+Se verificaron reinicios de contenedores/agentes, recarga de nftables y reinicios completos secuenciales de ambas VM. `verify-full-reboot.py` compara los boot ID, servicios, salud de contenedores, firmas de reservas/asientos e historial antes y después, y confirma acceso HTTPS y reserva persistida. El panel gráfico propio ya está implementado y accesible únicamente desde TI. Los resultados se conservan en los JSON de validación de la carpeta de fase.

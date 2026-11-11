@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1">
+ <meta name="robots" content="noindex,nofollow">
+ <title>AeroQuetzal · Observatorio SNMP</title>
+ <link rel="stylesheet" href="/style.css">
+ <script src="/app.js" defer></script>
+</head>
+<body>
+ <header class="top"><a class="brand" href="/" aria-label="AeroQuetzal, inicio"><span class="brand-mark">AQ</span><span>AEROQUETZAL<small>OBSERVATORIO DE RED</small></span></a><span class="private-badge">● ACCESO EXCLUSIVO TI</span></header>
+ <main>
+  <section class="intro"><div><p class="eyebrow">INFRAESTRUCTURA / TELEMETRÍA</p><h1>La red,<br><span>a la vista.</span></h1><p class="description">Salud, carga y tráfico de nuestra infraestructura.<br>Mediciones reales. Una vista compartida.</p></div><div class="protocol"><span class="protocol-icon">↗</span><strong>SNMPv3</strong><p>SHA-256 + AES<br>authPriv · sólo lectura</p><span class="tag">ORIGEN: TI · 10.10.0.52</span></div></section>
+  <div id="notice" class="notice" role="status">Conectando con el colector…</div>
+  <section class="toolbar" aria-label="Selección del servidor"><div class="tabs"><button type="button" data-target="edge" aria-pressed="true">01 / edge-vpn</button><button type="button" data-target="core" aria-pressed="false">02 / core-app</button></div><div class="updated"><span id="last-update">Esperando muestra</span><button id="refresh" type="button">Actualizar ↻</button></div></section>
+  <section class="stats" aria-label="Métricas actuales">
+   <article class="stat mint"><p>ESTADO DEL AGENTE</p><strong id="agent-state">—</strong><small id="agent-address">UDP 161 · red privada</small></article>
+   <article class="stat yellow"><p>CARGA / 1 MINUTO</p><strong id="load">—</strong><small>Promedio de carga, no porcentaje de CPU</small></article>
+   <article class="stat blue"><p>MEMORIA USADA</p><strong id="memory">—</strong><small id="memory-total">Sin buffers ni caché</small></article>
+   <article class="stat"><p>TIEMPO DEL AGENTE</p><strong id="uptime">—</strong><small id="interfaces-count">Interfaces registradas por SNMP</small></article>
+  </section>
+  <section class="history-heading"><div><p class="eyebrow">HISTORIAL PERSISTENTE</p><h2>Lo que está pasando.</h2></div><label>Período <select id="window"><option value="3600">Última hora</option><option value="86400">Últimas 24 horas</option><option value="172800">Últimas 48 horas</option></select></label></section>
+  <section class="charts" aria-label="Gráficas SNMP"><article class="chart"><div class="chart-heading"><h3>Carga del sistema</h3><span>SIN UNIDAD</span></div><svg id="load-chart" viewBox="0 0 600 220" role="img" aria-label="Historial de carga de un minuto"></svg></article><article class="chart"><div class="chart-heading"><h3>Memoria usada</h3><span>PORCENTAJE</span></div><svg id="memory-chart" viewBox="0 0 600 220" role="img" aria-label="Historial de memoria usada sin buffers ni caché"></svg></article><article class="chart traffic"><div class="chart-heading"><div><h3>Tráfico del enlace</h3><p id="uplink">Interfaz principal</p></div><div class="legend"><span class="rx">● Entrada</span><span class="tx">● Salida</span></div></div><svg id="traffic-chart" viewBox="0 0 1200 230" role="img" aria-label="Historial de tráfico de entrada y salida en megabits por segundo"></svg><p class="chart-foot">Mbps calculados con contadores SNMP de 64 bits entre muestras. Se necesita una segunda muestra para calcular velocidades; los reinicios abren un intervalo nuevo.</p></article></section>
+  <section class="interfaces"><div class="section-heading"><div><p class="eyebrow">MAPA DE INTERFACES</p><h2>Cada enlace cuenta.</h2></div><span id="link-summary" class="tag">—</span></div><div class="table-wrap"><table><thead><tr><th>Interfaz</th><th>Estado</th><th>Entrada</th><th>Salida</th><th>RX acumulado</th><th>TX acumulado</th></tr></thead><tbody id="interfaces-body"><tr><td colspan="6">Esperando datos SNMP…</td></tr></tbody></table></div></section>
+  <footer><strong>AEROQUETZAL / TI</strong><span>Muestreo cada 60 s · Historial máximo 48 h · Hora de Guatemala</span><span>Datos sanitizados; sin credenciales en el navegador.</span></footer>
+ </main>
+</body>
+</html>

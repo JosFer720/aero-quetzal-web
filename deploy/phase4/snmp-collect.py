@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+from snmp_panel import publish
 
 pid = subprocess.check_output(["docker", "inspect", "-f", "{{.State.Pid}}", "ti01"], text=True).strip()
 assert int(pid) > 0
@@ -15,6 +16,8 @@ oids = {
     "memory_total_kb": ".1.3.6.1.4.1.2021.4.5.0",
     "memory_available_kb": ".1.3.6.1.4.1.2021.4.6.0",
     "load_1min": ".1.3.6.1.4.1.2021.10.1.3.1",
+    "memory_buffers_kb": ".1.3.6.1.4.1.2021.4.14.0",
+    "memory_cached_kb": ".1.3.6.1.4.1.2021.4.15.0",
 }
 result = {"timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(), "source": "TI 10.10.0.52", "targets": {}}
 for target, address in (("edge", "172.20.0.2"), ("core", "10.10.0.49")):
@@ -28,6 +31,7 @@ temporary = directory / "latest.json.tmp"
 temporary.write_text(json.dumps(result, indent=2) + "\n")
 os.chmod(temporary, 0o640)
 temporary.replace(directory / "latest.json")
+publish(result, pid)
 print(json.dumps(result, indent=2))
 if not all(item["ok"] for item in result["targets"].values()):
     raise SystemExit(1)

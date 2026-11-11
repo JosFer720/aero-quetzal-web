@@ -1,0 +1,8 @@
+[Unit]
+Description=Attach the SNMP visualization container exclusively to TI
+After=docker.service aeroquetzal-network.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/aeroquetzal-phase4/snmp-panel-network.sh
